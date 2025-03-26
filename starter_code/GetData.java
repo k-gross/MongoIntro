@@ -89,7 +89,7 @@ public class GetData {
                     currentCityObj.put("state", currentCityResult.getString("state_name"));
                     currentCityObj.put("country", currentCityResult.getString("country_name"));
                 }
-                user.put("current_city", currentCityObj);
+                user.put("current", currentCityObj);
                 currentCityResult.close();
                 cityStmt.close();
                 
@@ -115,11 +115,8 @@ public class GetData {
                 users_info.put(user);
             }
 
-            System.out.println("before close");
             stmt.close();
-            System.out.println("after close");
         } catch (SQLException e) {
-            System.out.println("uhuh");
             System.err.println(e.getMessage());
         }
 

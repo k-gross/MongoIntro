@@ -37,6 +37,7 @@ public class GetData {
         hometownCityTableName = prefix + dataType + "_USER_HOMETOWN_CITIES";
     }
 
+
     // TODO: Implement this function
     @SuppressWarnings("unchecked")
     public JSONArray toJSON() throws SQLException {
@@ -46,10 +47,79 @@ public class GetData {
         
         try (Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             // Your implementation goes here....
-            
-            
+           
+            ResultSet result = stmt.executeQuery("SELECT * FROM " + userTableName);
+           
+
+            while(result.next()) {
+                
+                JSONObject user = new JSONObject();
+                int curUserId = result.getInt("USER_ID");
+                //Get User specific information
+                user.put("user_id", result.getInt("USER_ID"));
+                user.put("first_name", result.getString("FIRST_NAME"));
+                user.put("last_name", result.getString("LAST_NAME"));
+                user.put("gender", result.getString("gender"));
+                user.put("YOB", result.getInt("year_of_birth"));
+                user.put("MOB", result.getInt("month_of_birth"));
+                user.put("DOB", result.getInt("day_of_birth"));
+
+                //Get user friend information
+                JSONArray friends = new JSONArray();
+                Statement friendStmt = oracleConnection.createStatement();
+                ResultSet friendResult = friendStmt.executeQuery("SELECT user2_id FROM " + friendsTableName + " WHERE user1_id = " + curUserId);
+                while(friendResult.next()) {
+                    friends.put(friendResult.getInt("user2_id"));
+                }
+                user.put("friends", friends);
+                friendResult.close();
+                friendStmt.close();
+
+                //Get current city info
+                JSONObject currentCityObj = new JSONObject();
+                Statement cityStmt = oracleConnection.createStatement();
+                ResultSet currentCityResult = cityStmt.executeQuery("SELECT c.city_name, c.state_name, c.country_name " +
+                                                                "FROM " + currentCityTableName + " ucc " + 
+                                                                "JOIN " + cityTableName + " c ON ucc.current_city_id = c.city_id " +
+                                                                "WHERE ucc.user_id = " + curUserId);
+                
+
+                if(currentCityResult.next()) {
+                    currentCityObj.put("city", currentCityResult.getString("city_name"));
+                    currentCityObj.put("state", currentCityResult.getString("state_name"));
+                    currentCityObj.put("country", currentCityResult.getString("country_name"));
+                }
+                user.put("current_city", currentCityObj);
+                currentCityResult.close();
+                cityStmt.close();
+                
+                //Get hometown city info
+                JSONObject hometownCityObj = new JSONObject();
+                Statement hometownCityStmt = oracleConnection.createStatement();
+                ResultSet hometownCityResult = hometownCityStmt.executeQuery("SELECT c.city_name, c.state_name, c.country_name " +
+                                                                "FROM " + hometownCityTableName + " uhc " + 
+                                                                "JOIN " + cityTableName + " c ON uhc.hometown_city_id = c.city_id " +
+                                                                "WHERE uhc.user_id = " + curUserId);
+                
+                if(hometownCityResult.next()) {
+                   
+                    hometownCityObj.put("city", hometownCityResult.getString("city_name"));
+                    hometownCityObj.put("state", hometownCityResult.getString("state_name"));
+                    hometownCityObj.put("country", hometownCityResult.getString("country_name"));
+                }
+                user.put("hometown", hometownCityObj);
+                hometownCityResult.close();
+                hometownCityStmt.close();
+                //System.out.println(userToString(user));
+
+                users_info.put(user);
+            }
+
+            System.out.println("before close");
             stmt.close();
+            System.out.println("after close");
         } catch (SQLException e) {
+            System.out.println("uhuh");
             System.err.println(e.getMessage());
         }
 

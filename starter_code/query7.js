@@ -19,6 +19,20 @@ function users_born_by_month(dbname) {
 	db = db.getSiblingDB(dbname);
 	
 	// Enter your solution below 
+	db.users.aggregate([
 
+		{
+			$group: { _id: "$MOB", borncount: { $sum: 1 } }
+		},
+		{
+			$project: { _id: 0, MOB: "$_id", borncount: 1 }
+		},
+		{
+			$sort: { MOB: 1 } 
+		},
+		{
+			$out: "countbymonth"
+		}
+	])
 }
 

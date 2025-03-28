@@ -13,5 +13,50 @@ function oldest_friend(dbname) {
     let results = {};
     // TODO: implement oldest friends
 
+    let flat_friends = db.users.aggregate([
+        { 
+            $unwind: "$friends"
+        },
+        {
+            $project: {user_id: 1, friends: 1 }
+        }
+    ]).toArray();
+
+    let map_of_friends = {};
+
+    flat_friends.forEach((entry) => {
+        if(!map_of_friends[entry.user_id]) {
+            map_of_friends[entry.user_id] = [];
+        }
+        if(!map_of_friends[entry.friends]) {
+            map_of_friends[entry.friends] = [];
+        }
+
+        map_of_friends[entry.user_id].push(entry.friends);
+        map_of_friends[entry.friends].push(entry.user_id);
+    });
+
+    Object.keys(map_of_friends).forEach((user_id) => {
+        let oldest = null;
+        let oldest_age = Infinity;
+
+        let user = db.users.findOne({ user_id: parseInt(user_id) });
+
+
+        map_of_friends[user_id].forEach((friend_id) => {
+            let curFriend = db.users.findOne({ user_id: friend_id });
+            
+            if(curFriend.YOB < oldest_age || (curFriend.YOB == oldest_age && curFriend.user_id < oldest.user_id)) {
+                oldest_age = curFriend.YOB;
+                oldest = curFriend;
+            }
+        });
+
+        if (oldest) {
+            results[parseInt(user_id)] = oldest.user_id;
+        }
+    });
+
+
     return results;
 }
